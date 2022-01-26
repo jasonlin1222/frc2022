@@ -38,26 +38,27 @@
 #include "ctre/Phoenix.h"
 #include "DrivebaseSimFX.h"
 #include "rev/CANSparkMax.h"
+#include "frc/AnalogGyro.h"
 
 using namespace frc;
 
 class Robot: public TimedRobot {
 public:
 	/* ------ [1] Update CAN Device IDs and switch to WPI_VictorSPX where necessary ------*/
-	WPI_TalonFX _rghtFront{1};
+	WPI_TalonFX _rightFront{1};
 	WPI_TalonFX _rghtFollower{2};
 	WPI_TalonFX _leftFront{3};
 	WPI_TalonFX _leftFollower{4};
-	WPI_TalonFX _shoot{1};
-	rev::CANSparkMax _load = rev::CANSparkMax(11,  rev::CANSparkMax::MotorType::kBrushless);
-	rev::CANSparkMax _suck = rev::CANSparkMax(10,  rev::CANSparkMax::MotorType::kBrushless);
+	rev::CANSparkMax _revshoot = rev::CANSparkMax(7, rev::CANSparkMax::MotorType::kBrushless);
+	WPI_TalonFX _shoot{8};
+	rev::CANSparkMax _load = rev::CANSparkMax(5,  rev::CANSparkMax::MotorType::kBrushless);
+	rev::CANSparkMax _suck = rev::CANSparkMax(6,  rev::CANSparkMax::MotorType::kBrushless);
 
-
-	WPI_PigeonIMU _pigeon{0};
-
-	DifferentialDrive _diffDrive{_leftFront, _rghtFront};
+	DifferentialDrive _diffDrive{_leftFront, _rightFront};
 
 	XboxController _joystick{0};
+
+	bool startShoot = false;
 
 	void SimulationPeriodic() {
 		_driveSim.Run();
@@ -68,11 +69,11 @@ public:
 		std::stringstream work;
 
 		/* get gamepad stick values */
-		double left = -_joystick.GetRawAxis(1); /* positive is forward */
-		double right = _joystick.GetRawAxis(2); /* positive is right */
-		bool st = _joystick.GetRawButton(1);
-		bool nd = _joystick.GetRawButton(2);
-		bool rd = _joystick.GetRawButton(3);
+		double left = -_joystick.GetLeftY();
+		double right = _joystick.GetRightY();
+		bool st = _joystick.GetAButton();
+		bool nd = _joystick.GetBButton();
+		bool rd = _joystick.GetXButton();
 		/* deadband gamepad 10%*/
 		if (fabs(left) < 0.10)
 			left = 0;
@@ -82,22 +83,30 @@ public:
 		/* drive robot */
 		_diffDrive.TankDrive(left, right, true);
 
-		// if(st) _suck.Set(0.3);
-		// else _suck.Set(0);
-		// if(nd) _load.Set(0.6);
-		// else _load.Set(0);
+		if(st) _suck.Set(0.3);
+		else _suck.Set(0);
+		if(nd) _load.Set(0.6);
+		else _load.Set(0);
 
-		// if(rd) _shoot.Set(1);
-		// else _shoot.Set(0);
+		if(rd && !startShoot){
+			_shoot.Set(1);
+			_revshoot.Set(1);
+		}
+		else if(rd && startShoot){
+			_shoot.Set(1);
+			_revshoot.Set(1);
+		}
 	
+		work << st << nd << rd;
+
 		/* -------- [2] Make sure Gamepad Forward is positive for FORWARD, and GZ is positive for RIGHT */
 		work << " GF:" << left << " GT:" << right;
 
 		/* get sensor values */
 		//double leftPos = _leftFront.GetSelectedSensorPosition(0);
-		//double rghtPos = _rghtFront.GetSelectedSensorPosition(0);
+		//double rghtPos = _rightFront.GetSelectedSensorPosition(0);
 		double leftVelUnitsPer100ms = _leftFront.GetSelectedSensorVelocity(0);
-		double rghtVelUnitsPer100ms = _rghtFront.GetSelectedSensorVelocity(0);
+		double rghtVelUnitsPer100ms = _rightFront.GetSelectedSensorVelocity(0);
 
 		work << " L:" << leftVelUnitsPer100ms << " R:" << rghtVelUnitsPer100ms;
 
@@ -107,17 +116,17 @@ public:
 
 	void RobotInit() {
 		/* factory default values */
-		_rghtFront.ConfigFactoryDefault();
+		_rightFront.ConfigFactoryDefault();
 		_rghtFollower.ConfigFactoryDefault();
 		_leftFront.ConfigFactoryDefault();
 		_leftFollower.ConfigFactoryDefault();
 
 		/* set up followers */
-		_rghtFollower.Follow(_rghtFront);
+		_rghtFollower.Follow(_rightFront);
 		_leftFollower.Follow(_leftFront);
 
 		/* [3] flip values so robot moves forward when stick-forward/LEDs-green */
-		_rghtFront.SetInverted(TalonFXInvertType::Clockwise);
+		_rightFront.SetInverted(TalonFXInvertType::Clockwise);
 		_rghtFollower.SetInverted(TalonFXInvertType::FollowMaster);
 		_leftFront.SetInverted(TalonFXInvertType::CounterClockwise);
 		_leftFollower.SetInverted(TalonFXInvertType::FollowMaster);
@@ -131,14 +140,14 @@ public:
 		 * 
 		 * https://phoenix-documentation.readthedocs.io/en/latest/ch14_MCSensor.html#sensor-phase
 		 */
-		// _rghtFront.SetSensorPhase(true);
+		// _rightFront.SetSensorPhase(true);
 		// _leftFront.SetSensorPhase(true);
 
 		frc::SmartDashboard::PutData("Field", &_driveSim.GetField());
 	}
 
 private:
-	DrivebaseSimFX _driveSim{_leftFront, _rghtFront, _pigeon};
+	DrivebaseSimFX _driveSim{_leftFront, _rightFront};
 };
 
 #ifndef RUNNING_FRC_TESTS

@@ -3,6 +3,7 @@
 #include <frc/simulation/DifferentialDrivetrainSim.h>
 #include <frc/smartdashboard/Field2d.h>
 #include <units/units.h>
+#include "frc/AnalogGyro.h"
 #include "ctre/Phoenix.h"
 
 class DrivebaseSimFX {
@@ -12,9 +13,8 @@ public:
 	 * 
 	 * @param leftMaster the left master Falcon
 	 * @param rightMaster the right master Falcon
-	 * @param pidgey the Pigeon IMU
 	 */
-	DrivebaseSimFX(WPI_TalonFX& leftMaster, WPI_TalonFX& rightMaster, WPI_PigeonIMU& pidgey);
+	DrivebaseSimFX(WPI_TalonFX& leftMaster, WPI_TalonFX& rightMaster);
 
 	/**
 	 * Returns a 2D representation of the game field for dashboards.
@@ -29,11 +29,9 @@ public:
 private:
 	WPI_TalonFX& _leftMaster;
 	WPI_TalonFX& _rightMaster;
-	WPI_PigeonIMU& _pidgey;
 
 	TalonFXSimCollection& _leftMasterSim;
 	TalonFXSimCollection& _rightMasterSim;
-	BasePigeonSimCollection& _pidgeySim;
 
 	//These numbers are an example AndyMark Drivetrain with some additional weight.  This is a fairly light robot.
 	//Note you can utilize results from robot characterization instead of theoretical numbers.
@@ -65,8 +63,6 @@ private:
 	// Creating my odometry object. Here,
 	// our starting pose is 5 meters along the long end of the field and in the
 	// center of the field along the short end, facing forward.
-	frc::DifferentialDriveOdometry _odometry;
-
 	// Helper methods to convert between meters and native units
 	int DistanceToNativeUnits(units::meter_t position);
 	int VelocityToNativeUnits(units::meters_per_second_t velocity);

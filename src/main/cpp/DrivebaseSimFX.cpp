@@ -6,12 +6,10 @@
  * 
  * @param leftMaster the left master Falcon
  * @param rightMaster the right master Falcon
- * @param pidgey the Pigeon IMU
  */
-DrivebaseSimFX::DrivebaseSimFX(WPI_TalonFX& leftMaster, WPI_TalonFX& rightMaster, WPI_PigeonIMU& pidgey)
-	: _leftMaster(leftMaster), _rightMaster(rightMaster), _pidgey(pidgey),
-	_leftMasterSim(leftMaster.GetSimCollection()), _rightMasterSim(rightMaster.GetSimCollection()), _pidgeySim(pidgey.GetSimCollection()),
-	_odometry{pidgey.GetRotation2d()}
+DrivebaseSimFX::DrivebaseSimFX(WPI_TalonFX& leftMaster, WPI_TalonFX& rightMaster)
+	: _leftMaster(leftMaster), _rightMaster(rightMaster),
+	_leftMasterSim(leftMaster.GetSimCollection()), _rightMasterSim(rightMaster.GetSimCollection())
 {}
 
 /**
@@ -77,17 +75,11 @@ void DrivebaseSimFX::Run() {
 					VelocityToNativeUnits(
 					    -_driveSim.GetRightVelocity()
                     ));
-	_pidgeySim.SetRawHeading(_driveSim.GetHeading().Degrees().value());
-
 	/*
 	 * This will get the simulated sensor readings that we set
 	 * in the previous article while in simulation, but will use
 	 * real values on the robot itself.
 	 */
-	_odometry.Update(_pidgey.GetRotation2d(),
-					NativeUnitsToDistanceMeters(_leftMaster.GetSelectedSensorPosition()),
-					NativeUnitsToDistanceMeters(_rightMaster.GetSelectedSensorPosition()));
-	_field.SetRobotPose(_odometry.GetPose());
 }
 
 // Helper methods to convert between meters and native units
